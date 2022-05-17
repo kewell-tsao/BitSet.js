@@ -58,7 +58,7 @@ function divide(arr: number[], B: number): number {
  * @param {Object} P
  * @param {string|BitSet|Array|Uint8Array|number=} val
  */
-function parse(P: Object, val: (string | BitSet | Array<any> | Uint8Array | number) | undefined): boolean {
+function parse(P: BitSetPrivate, val?: string | BitSet | Array<any> | Uint8Array | number): boolean {
   if (val == null) {
     P['data'] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     P['_'] = 0;
@@ -82,9 +82,9 @@ function parse(P: Object, val: (string | BitSet | Array<any> | Uint8Array | numb
       let len = WORD_LENGTH;
 
       if (val.indexOf('0b') === 0) {
-        val = val.substr(2);
+        val = val.substring(2);
       } else if (val.indexOf('0x') === 0) {
-        val = val.substr(2);
+        val = val.substring(2);
         base = 16;
         len = 8;
       }
@@ -151,10 +151,10 @@ function parse(P: Object, val: (string | BitSet | Array<any> | Uint8Array | numb
   return true;
 }
 
-function scale(dst: BitSet | object, ndx: number) {
+function scale(dst: BitSet | BitSetPrivate, ndx: number) {
   let l = ndx >>> WORD_LOG;
-  let d = dst['data'];
-  let v = dst['_'];
+  let d = (dst as BitSetPrivate)['data'];
+  let v = (dst as BitSetPrivate)['_'];
 
   for (let i = d.length; l >= i; l--) {
     d.push(v);
@@ -370,6 +370,11 @@ export interface ReadOnlyBitSet {
   [Symbol.iterator](): Iterator<number>;
 }
 
+export interface BitSetPrivate {
+  data: number[];
+  _: number;
+}
+
 export default class BitSet implements ReadOnlyBitSet {
   private data: number[] = [];
   private _: number = 0;
@@ -397,8 +402,8 @@ export default class BitSet implements ReadOnlyBitSet {
    * - A BitSet object, which is cloned
    *
    */
-  constructor(param: (string | BitSet | number) | undefined) {
-    const newDate = parse(this, param);
+  constructor(param?: string | BitSet | number) {
+    const newDate = parse(this as unknown as BitSetPrivate, param);
     if (!newDate) this.data = this.data.slice();
   }
 
@@ -413,7 +418,7 @@ export default class BitSet implements ReadOnlyBitSet {
    * @param {number=} value Optional value that should be set on the index (0 or 1)
    * @returns {BitSet} this
    */
-  set(ndx: number, value: number | undefined): BitSet {
+  set(ndx: number, value?: number): BitSet {
     ndx |= 0;
 
     scale(this, ndx);
@@ -728,7 +733,7 @@ export default class BitSet implements ReadOnlyBitSet {
       }
       return im;
     }
-    return null;
+    return this;
   }
 
   /**
@@ -796,7 +801,7 @@ export default class BitSet implements ReadOnlyBitSet {
    * @param {number=} base
    * @returns string A binary string
    */
-  toString(base: number | undefined = null): string {
+  toString(base?: number): string {
     let data = this.data;
 
     if (!base) base = 2;
@@ -1070,7 +1075,7 @@ export default class BitSet implements ReadOnlyBitSet {
     return new BitSet('0x' + str);
   }
 
-  static Random(n: number | undefined = null): BitSet {
+  static Random(n?: number): BitSet {
     if (n === undefined || n < 0) {
       n = WORD_LENGTH;
     }
